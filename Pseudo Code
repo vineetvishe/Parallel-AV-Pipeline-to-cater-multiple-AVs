@@ -1,0 +1,77 @@
+BEGIN
+    // Define Shared Folders Paths
+    TARGET_FOLDER = "Shared/TargetFolder"
+    INFECTED_FOLDER = "Shared/InfectedFolder"
+    SAFE_FOLDER = "Shared/SafeFolder"
+    
+    // Step 1: Place Files in Target Folder
+    while TRUE:
+        WAIT for NEW_FILE in TARGET_FOLDER
+
+        // Step 2: Start Parallel Scanning Process
+        FOR EACH VIRTUAL_ENVIRONMENT in [VM1, VM2, VM3]:
+            ANTIVIRUS = Load Antivirus Engine in VIRTUAL_ENVIRONMENT
+            THREAD_POOL.add( SCAN_FILE(ANTIVIRUS, NEW_FILE) )
+
+        // Step 3: Wait for All Threads to Finish Scanning
+        THREAD_POOL.wait_for_completion()
+
+        // Step 4: Determine Scan Results from All AVs
+        IF ALL_AVS_CLEAN(NEW_FILE):
+            MOVE NEW_FILE TO SAFE_FOLDER
+        ELSE:
+            MOVE NEW_FILE TO INFECTED_FOLDER
+            GENERATE_REPORT(NEW_FILE, INFECTED_FOLDER)
+            LOG_INFECTED_FILE_PATH(NEW_FILE, INFECTED_FOLDER)
+
+        // Step 5: Update Dashboard with Scanning Results
+        UPDATE_DASHBOARD(NEW_FILE, SCAN_RESULTS)
+    
+        // Step 6: Notify on Completion of Scanning
+        SHOW_NOTIFICATION("Scanning Completed for " + NEW_FILE)
+    END_WHILE
+END
+
+
+// Function to Scan a File
+FUNCTION SCAN_FILE(ANTIVIRUS, FILE):
+    SCAN_RESULT = ANTIVIRUS.scan(FILE)
+    RETURN SCAN_RESULT
+END_FUNCTION
+
+// Function to Check if File is Clean Across All AVs
+FUNCTION ALL_AVS_CLEAN(FILE):
+    CLEAN = TRUE
+    FOR EACH ANTIVIRUS in [Windows Defender, Trend Micro, ESET]:
+        SCAN_RESULT = ANTIVIRUS.get_scan_result(FILE)
+        IF SCAN_RESULT == "INFECTED":
+            CLEAN = FALSE
+            BREAK
+    RETURN CLEAN
+END_FUNCTION
+
+// Function to Generate Report for Infected File
+FUNCTION GENERATE_REPORT(FILE, INFECTED_FOLDER):
+    REPORT_PATH = INFECTED_FOLDER + "/report_" + FILE.name + ".txt"
+    REPORT_FILE = OPEN_FILE(REPORT_PATH, "WRITE")
+    REPORT_FILE.write("File: " + FILE.name + " detected as infected.\n")
+    FOR EACH ANTIVIRUS in [Windows Defender, Trend Micro, ESET]:
+        REPORT_FILE.write(ANTIVIRUS.name + ": " + ANTIVIRUS.get_scan_result(FILE) + "\n")
+    REPORT_FILE.close()
+END_FUNCTION
+
+// Function to Log Infected File Path
+FUNCTION LOG_INFECTED_FILE_PATH(FILE, INFECTED_FOLDER):
+    LOG_PATH = INFECTED_FOLDER + "/infected_log.txt"
+    APPEND_FILE(LOG_PATH, FILE.path + "\n")
+END_FUNCTION
+
+// Function to Update Dashboard with Scanning Results
+FUNCTION UPDATE_DASHBOARD(FILE, SCAN_RESULTS):
+    DASHBOARD.update(FILE.name, SCAN_RESULTS)
+END_FUNCTION
+
+// Function to Show Notification
+FUNCTION SHOW_NOTIFICATION(MESSAGE):
+    DISPLAY_POPUP(MESSAGE)
+END_FUNCTION
