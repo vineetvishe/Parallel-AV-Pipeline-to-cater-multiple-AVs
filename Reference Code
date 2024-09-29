@@ -3,7 +3,7 @@ BEGIN
     TARGET_FOLDER = "Shared/TargetFolder"
     INFECTED_FOLDER = "Shared/InfectedFolder"
     SAFE_FOLDER = "Shared/SafeFolder"
-     
+    
     // Step 1: Place Files in Target Folder
     while TRUE:
         WAIT for NEW_FILE in TARGET_FOLDER
